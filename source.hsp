@@ -1,0 +1,117 @@
+#packopt hide 1
+#packopt name "launchpad.exe"
+//8*8
+/*color
+2bit of RGBs
+*/
+*init
+	screen 0,640,480,0,(ginfo_dispx-640)/2,(ginfo_dispy-480-100)/2
+	dim lcnt
+	dim pad,8,8
+	dim padkey,8,8
+	dim func
+	repeat 8
+		lcnt=cnt
+		repeat 8
+			pad(lcnt,cnt)=63
+			mci "open "+(lcnt+1)+"-"+(cnt+1)+".wav alias "+lcnt+"-"+cnt
+		loop
+		
+	loop
+	dim padx
+	padx=160
+	dim pady
+	pady=80
+	dim cr
+	dim cg
+	dim cb
+	sdim pushed,256
+	dim switch_key,2
+	dim switch_stat
+	dim keybd,8,4
+	sdim keybd_source,1024
+	sdim strone,256
+	bload "qwerty.txt",keybd_source
+	//
+	notesel keybd_source
+	repeat 4
+		lcnt=cnt
+		noteget strone,lcnt
+		repeat 8
+			keybd(cnt,lcnt)=peek(strone,cnt)
+		loop
+	loop
+	noteget strone,4
+	repeat 2
+		switch_key(cnt)=peek(strone,cnt)
+	loop
+	//
+*main
+	redraw 0
+	color 0,0,0
+	boxf
+	color 255,255,255
+	pos 0,0
+	gosub *write
+	gosub *key_input
+	gosub *process
+	redraw 1
+	await 20
+	goto *main
+*write
+	color 255,255,255
+	pos 0,0
+	mes "Switch:"+switch_stat
+	color 64,64,64
+	boxf 0,0,ginfo_mesx,ginfo_mesy
+	color 255,255,255
+	pos 0,0
+	mes "Switch:"+switch_stat
+	
+	
+	repeat 8	//pad
+		lcnt=cnt
+		repeat 8
+			cr=pad(lcnt,cnt)/16		*85
+			cg=pad(lcnt,cnt)\16/4	*85
+			cb=pad(lcnt,cnt)\4		*85
+			
+			color cr,cg,cb
+			boxf lcnt*40+padx,cnt*40+pady,lcnt*40+30+padx,cnt*40+30+pady
+			
+		loop
+	loop
+	return
+*process
+	repeat 8
+		lcnt=cnt
+		repeat 8
+			if padkey(lcnt,cnt)=1{
+				pad(lcnt,cnt)=rnd(63)+1
+				mci "play "+cnt+"-"+lcnt
+			}
+			if padkey(lcnt,cnt)=0{
+				pad(lcnt,cnt)=63
+				mci "seek "+cnt+"-"+lcnt+" to 0"
+				mci "stop "+cnt+"-"+lcnt
+			}
+		loop
+	loop
+	return	
+*key_input
+	repeat 8		//pad
+		lcnt=cnt
+		repeat 4
+			getkey ky,keybd(lcnt,cnt)
+			if ky=1{
+				padkey(lcnt,cnt+switch_stat*4)+=1
+			}else{
+				padkey(lcnt,cnt+switch_stat*4)=0
+			}
+		loop
+	loop
+	repeat 2		//switch key
+		getkey ky,switch_key(cnt)
+		if ky=1:switch_stat=cnt
+	loop
+	return
